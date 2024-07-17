@@ -106,6 +106,12 @@ contract vote{
     }
 
     function getCandidateList() public view returns (Candidate[] memory) {
+
+        Candidate[] memory candidateList = new Candidate[](nextCandidateId - 1);
+        for(uint i=0; i < candidateList.length;i++){
+            candidateList[i] = candidateDetails[i + 1];
+        }
+        return candidateList;
         
     }
 
@@ -145,22 +151,52 @@ contract vote{
 
 
     function getVoterList() public view returns (Voter[] memory){
+        Voter[] memory voterList = new Voter[](nextVoterId - 1);
+        for(uint i =0 ; i < voterList.length; i++){
+            voterList[i] = voterDetails[i+ 1 ];
+        }
+        return voterList;
+    }
+
+    function castVote(uint _voterId, uint _candidateId) external{
+        require(voterDetails[_voterId].voteCandidateId==0,"you have already Voted");
+        require(voterDetails[_voterId].voterAddress == msg.sender,"you are not authorized");
+        require(_candidateId>=1 && _candidateId <3, "candidate Id is not correct");
+        voterDetails[_voterId].voteCandidateId = _candidateId; //voting to _candidateId
+        candidateDetails[_candidateId].votes++; //icrement _candidateId votes
+
+
+
         
     }
 
-    function castVote(uint _voterId, uint _id) external{
-        
-    }
-
-    function setVotingPeriod(uint _startTime, uint _endTime) external onlyCommissioner (){
+    function setVotingPeriod(uint _startTimeDuration, uint _endTimeDuration) external onlyCommissioner (){
+        require(_endTimeDuration >3600, "_endTimeDuration must be greater than 1 hour");
+        startTime = block.timestamp+_startTimeDuration;
+        endTime = startTime+_endTimeDuration;
         
     }
 
     function getVotingStatus()public view returns (VotingStatus){
-        
+        if(startTime==0){
+            return VotingStatus.NotStarted;
+
+        }else if(endTime>block.timestamp && stopVoting==false){
+            return VotingStatus.InProgress;
+         }else {
+            return VotingStatus.Ended;
+        }
     }
 
     function announceVotingResult() external onlyCommissioner (){
+        uint max=0;
+        for(uint i=1; i<nextCandidateId; i++){
+            if(candidateDetails[i].votes>max){
+                max=candidateDetails[i].votes;
+                winner= candidateDetails[i].candidateAddress ;
+            }
+        }
+        
         
     }
 
